@@ -23,6 +23,7 @@ FONT_SMALL = pygame.font.SysFont("comicsans", 20)
 # Initialize the board
 board = [[0 for _ in range(9)] for _ in range(9)]
 original_board = [[0 for _ in range(9)] for _ in range(9)]
+solved_cells = [[False for _ in range(9)] for _ in range(9)]
 
 # Difficulty levels
 difficulties = {
@@ -67,7 +68,8 @@ def draw_board(win, board, highlight=None):
     for i in range(len(board)):
         for j in range(len(board[i])):
             if board[i][j] != 0:
-                text = FONT.render(str(board[i][j]), 1, BLACK)
+                color = RED if solved_cells[i][j] else BLACK
+                text = FONT.render(str(board[i][j]), 1, color)
                 win.blit(text, (j * gap + 20, i * gap + 15))
             if highlight and highlight == (i, j):
                 pygame.draw.rect(win, YELLOW, (j * gap, i * gap, gap, gap), 3)
@@ -76,6 +78,7 @@ def clear_board(board):
     for i in range(9):
         for j in range(9):
             board[i][j] = 0
+            solved_cells[i][j] = False
 
 def generate_puzzle(board, difficulty):
     clear_board(board)
@@ -85,6 +88,7 @@ def generate_puzzle(board, difficulty):
     for i in range(9):
         for j in range(9):
             original_board[i][j] = board[i][j]
+            solved_cells[i][j] = False
 
 def fill_diagonal_boxes(board):
     for i in range(0, 9, 3):
@@ -159,11 +163,13 @@ def solve_with_animation(board, win):
     for num in range(1, 10):
         if is_safe(board, row, col, num):
             board[row][col] = num
+            solved_cells[row][col] = True
             animate_number_selection(win, board, row, col, num)
             pygame.event.pump()  # Process events to keep the window responsive
             if solve_with_animation(board, win):
                 return True
             board[row][col] = 0
+            solved_cells[row][col] = False
             animate_number_selection(win, board, row, col, 0)
             pygame.event.pump()  # Process events to keep the window responsive
     return False
@@ -178,7 +184,7 @@ def animate_number_selection(win, board, row, col, final_num):
         pygame.time.delay(50)
     pygame.draw.rect(win, WHITE, (col * gap + 1, row * gap + 1, gap - 1, gap - 1))
     if final_num != 0:
-        text = FONT.render(str(final_num), 1, BLACK)
+        text = FONT.render(str(final_num), 1, RED)
         win.blit(text, (col * gap + 20, row * gap + 15))
     pygame.display.update()
     pygame.time.delay(100)
@@ -204,6 +210,7 @@ def reset_board():
     for i in range(9):
         for j in range(9):
             board[i][j] = original_board[i][j]
+            solved_cells[i][j] = False
 
 def main():
     run = True
@@ -266,6 +273,7 @@ def main():
                         if key is not None:
                             if key == 0 or is_safe(board, row, col, key):
                                 board[row][col] = key
+                                solved_cells[row][col] = False
                                 key = None
                             else:
                                 print("Invalid move!")
